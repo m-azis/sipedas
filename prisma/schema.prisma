@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String   // Nanti diisi password yang sudah di-hash
+  nama      String
+  role      String   @default("ADMIN") // Opsional jika ada role lain
+  createdAt DateTime @default(now())
+}
+
+// --- MODEL FOLDER KHUSUS SURAT MASUK ---
+model FolderSuratMasuk {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String?  
+  createdAt DateTime @default(now())
+  
+  parent    FolderSuratMasuk?  @relation("SubFoldersMasuk", fields: [parentId], references: [id], onDelete: Cascade)
+  children  FolderSuratMasuk[] @relation("SubFoldersMasuk")
+  
+  suratMasuk SuratMasuk[]
+}
+
+// --- MODEL FOLDER KHUSUS SURAT KELUAR ---
+model FolderSuratKeluar {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String?  
+  createdAt DateTime @default(now())
+  
+  parent    FolderSuratKeluar?  @relation("SubFoldersKeluar", fields: [parentId], references: [id], onDelete: Cascade)
+  children  FolderSuratKeluar[] @relation("SubFoldersKeluar")
+  
+  suratKeluar SuratKeluar[]
+}
+
+model SuratMasuk {
+  id             Int      @id @default(autoincrement())
+  noUrut         Int
+  noBerkas       String
+  alamatPengirim String
+  tanggalSurat   DateTime
+  nomorSurat     String
+  perihal        String
+  noPetunjuk     String?
+  noPaket        String?
+  fileUrl        String?
+  createdAt      DateTime @default(now())
+  
+  // Relasi ke Folder Khusus Surat Masuk
+  folderId       String?
+  folder         FolderSuratMasuk? @relation(fields: [folderId], references: [id])
+}
+
+model SuratKeluar {
+  id             Int      @id @default(autoincrement())
+  noUrut         Int
+  noBerkas       String
+  tujuanSurat    String    
+  tanggalSurat   DateTime
+  nomorSurat     String
+  perihal        String
+  noPetunjuk     String?
+  noPaket        String?
+  fileUrl        String?
+  createdAt      DateTime @default(now())
+  
+  // Relasi ke Folder Khusus Surat Keluar
+  folderId       String?
+  folder         FolderSuratKeluar? @relation(fields: [folderId], references: [id])
+}
+
+// --- MODEL DOKUMEN KERJA ---
+model FolderDokumenKerja {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String?
+  createdAt DateTime @default(now())
+
+  parent    FolderDokumenKerja?  @relation("SubFoldersKerja", fields: [parentId], references: [id], onDelete: Cascade)
+  children  FolderDokumenKerja[] @relation("SubFoldersKerja")
+  
+  dokumenKerja DokumenKerja[]
+}
+
+model DokumenKerja {
+  id           Int      @id @default(autoincrement())
+  namaDokumen  String
+  tanggal      DateTime @default(now())
+  tempat       String   @default("-")
+  fileUrl      String?
+  createdAt    DateTime @default(now())
+
+  folderId     String?
+  folder       FolderDokumenKerja? @relation(fields: [folderId], references: [id])
+}
+
+// --- MODEL DOKUMENTASI ---
+model FolderDokumentasi {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String?
+  createdAt DateTime @default(now())
+
+  parent    FolderDokumentasi?  @relation("SubFoldersDokumentasi", fields: [parentId], references: [id], onDelete: Cascade)
+  children  FolderDokumentasi[] @relation("SubFoldersDokumentasi")
+  
+  dokumentasi Dokumentasi[]
+}
+
+model Dokumentasi {
+  id           Int      @id @default(autoincrement())
+  namaDokumen  String
+  tanggal      DateTime @default(now())
+  tempat       String   @default("-")
+  fileUrl      String?
+  createdAt    DateTime @default(now())
+
+  folderId     String?
+  folder       FolderDokumentasi? @relation(fields: [folderId], references: [id])
+}

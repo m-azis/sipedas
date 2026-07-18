@@ -1,0 +1,310 @@
+/* ==========================================================================
+   SIPEDAS GLOBAL STYLE CONFIGURATION
+   Tema: Maroon & Putih (Dinas Pendidikan Kabupaten Bojonegoro)
+   ========================================================================== */
+
+:root {
+  --maroon: #800000;
+  --maroon-dark: #5a0000;
+  --sidebar-width: 260px;
+  --bg-body: #f1f5f9; /* Abu-abu sangat muda untuk kedalaman */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-body);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #1e293b;
+}
+
+/* FIX KEBOARD LOCK: Memaksa semua elemen input di dalam aplikasi desktop (.exe)
+  agar dapat menerima fokus klik, kursor ketikan, dan seleksi text dari Windows 
+*/
+input, 
+textarea, 
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+  cursor: text !important;
+}
+
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* SIDEBAR: Solid & Berwibawa */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--maroon);
+  color: white;
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+}
+
+/* MAIN CONTENT: Area Kerja */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+}
+
+/* HEADER: Putih Bersih Modern */
+.header-bar {
+  background: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* CONTAINER: Membatasi lebar agar tidak melar di monitor lebar */
+.content-area {
+  max-width: 1400px; 
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.data-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+/* Tabel Modern */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background: #f8fafc;
+  padding: 1rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: 0.2s;
+}
+
+.nav-item:hover {
+  background: var(--maroon-dark);
+  color: white;
+}
+
+/* Container Utama */
+.page-wrapper {
+  background-color: #f1f5f9;
+  min-height: 100vh;
+  padding-bottom: 3rem;
+}
+
+/* Header di dalam halaman form */
+.header-content {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 0;
+}
+
+.brand-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #800000;
+  margin: 0;
+}
+
+.brand-sub {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 1px;
+}
+
+.btn-back {
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #475569;
+  cursor: pointer;
+}
+
+/* Card Form */
+.form-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.form-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-accent {
+  width: 4px;
+  height: 20px;
+  background: #800000;
+  border-radius: 10px;
+}
+
+.form-body {
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+/* Input Styles */
+.input-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.input-group input, 
+.input-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  background: #f8fafc;
+}
+
+.input-group input:focus, 
+.input-group textarea:focus {
+  outline: none;
+  border-color: #800000;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(128, 0, 0, 0.05);
+}
+
+/* Upload Section */
+.upload-container {
+  grid-column: span 2;
+  background: #fffafa;
+  border: 1.5px dashed #fca5a5;
+  padding: 1.5rem;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.upload-mode-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+
+.btn-toggle {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.btn-toggle.active {
+  background: #800000;
+  color: white;
+  border-color: #800000;
+}
+
+.custom-file-input {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 0.8rem;
+}
+
+/* Footer & Button */
+.form-footer {
+  padding: 1.5rem 2rem;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  text-align: right;
+}
+
+.btn-submit {
+  width: 100%;
+  background: #800000;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-submit:hover {
+  background: #5a0000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(128, 0, 0, 0.2);
+}
+
+.btn-submit:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+}

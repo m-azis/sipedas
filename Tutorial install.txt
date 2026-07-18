@@ -1,0 +1,45 @@
+Berikut adalah panduan yang diketik persis sesuai format dan urutan yang Anda kirimkan, dengan penyesuaian nama menjadi SIPEDAS:
+
+PANDUAN INSTALASI MANDIRI APLIKASI SIPEDAS
+Salin (Copy) folder "SIPEDAS" dari Flashdisk ke Drive laptop target
+(Disarankan ditaruh di D:\SIPEDAS atau C:\SIPEDAS).
+
+Pastikan laptop tersebut sudah terinstal Node.js. Jika belum, instal Node.js versi LTS
+terlebih dahulu di https://nodejs.org/. Anda bisa memastikan instalasi berhasil dengan
+membuka Command Prompt dan mengetik "node -v" & "npm -v".
+
+Buka folder proyek tersebut di File Explorer, cari file bernama "install-semua.bat".
+
+Klik kanan pada "install-semua.bat", lalu pilih "Run as Administrator". Tunggu hingga
+proses di layar hitam selesai. Skrip ini akan otomatis mendaftarkan domain lokal,
+menginstal PM2, dan mengunci aplikasi Next.js agar langsung berjalan di latar belakang
+setiap kali laptop dinyalakan.
+
+Setelah terminal selesai, masuk ke dalam folder "SIPEDAS-win32-x64".
+
+Cari file aplikasi bernama "SIPEDAS.exe".
+
+Klik kanan pada file "SIPEDAS.exe" -> pilih "Show more options" (jika di Windows 11)
+-> Send to -> Desktop (create shortcut).
+
+(Opsional) Di Desktop, klik kanan pada Shortcut baru tersebut -> Properties -> Change Icon
+-> Browse -> Pilih file "logo.ico" di dalam folder "public" agar logo aplikasi berubah menjadi
+logo resmi instansi. Aplikasi kini siap digunakan!
+
+ATAU (SKRIP PEMELIHARAAN)
+
+Cuplikan kode
+:: 1. Masuk ke folder SIPEDAS
+cd /d "D:\SIPEDAS"
+
+:: 2. Matikan paksa port node yang sedang berjalan
+taskkill /f /im node.exe
+
+:: 3. Hapus folder cache lama
+rd /s /q .next
+
+:: 4. Kompilasi ulang kode (Sekarang tanpa campur tangan reset Tailwind)
+npm run build
+
+:: 5. Nyalakan kembali server produksi Next.js
+start /b npx next start -p 3000
