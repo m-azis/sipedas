@@ -227,7 +227,7 @@ export default function MonitoringSuratKeluar() {
                             files.map((url: string, i: number) => {
                               const cleanUrl = url.trim();
                               // Menyesuaikan base path folder fisik ke surat-keluar secara eksplisit
-                              const finalUrl = cleanUrl.startsWith('/') ? cleanUrl : `/uploads/surat-keluar/${cleanUrl}`;
+                              const finalUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/surat-keluar/${cleanUrl}`;
                               const fileNameToDownload = cleanUrl.split('/').pop() || `surat_keluar_${i + 1}`;
 
                               return (
@@ -242,8 +242,9 @@ export default function MonitoringSuratKeluar() {
                                   </a>
 
                                   <a
-                                    href={finalUrl}
-                                    download={fileNameToDownload}
+                                    href={`${finalUrl}?download=`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     title={`Download Arsip ${i + 1}`}
                                     style={downloadBadgeStyle}
                                   >

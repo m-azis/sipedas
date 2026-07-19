@@ -408,7 +408,7 @@ export default function ManajemenBerkasDokumenKerja() {
                       {item.type === 'file' && (
                         <>
                           <Link href={`/dokumen-kerja/edit/${item.id}`} style={actionLinkBlue}>EDIT</Link>
-                          <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" style={actionLinkGreen}>LIHAT</a>
+                          <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' }}>LIHAT</a>
                         </>
                       )}
                       <button 

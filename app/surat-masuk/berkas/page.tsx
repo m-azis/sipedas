@@ -396,7 +396,10 @@ export default function ManajemenBerkasSuratMasuk() {
                   <td style={{ ...tdStyle, borderRight: 'none' }}>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                       {item.type === 'file' && (
-                        <Link href={`/surat-masuk/edit/${item.id}`} style={actionLinkBlue}>EDIT</Link>
+                        <>
+                          <Link href={`/surat-masuk/edit/${item.id}`} style={actionLinkBlue}>EDIT</Link>
+                          <a href={item.fileUrl?.startsWith('http') ? item.fileUrl : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/surat-masuk/${item.fileUrl}`} target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' }}>LIHAT</a>
+                        </>
                       )}
                       <button 
                         onClick={() => startMovingSingle(item.id, item.name)} 

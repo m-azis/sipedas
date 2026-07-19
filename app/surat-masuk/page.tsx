@@ -230,7 +230,7 @@ export default function MonitoringSuratMasuk() {
                             files.map((url: string, i: number) => {
                               const cleanUrl = url.trim();
                               // Menyinkronkan prefix base path agar aman saat dibuka/diunduh
-                              const finalUrl = cleanUrl.startsWith('/') ? cleanUrl : `/uploads/surat-masuk/${cleanUrl}`;
+                              const finalUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/surat-masuk/${cleanUrl}`;
                               
                               // Mendapatkan nama file murni untuk atribut unduhan berkas
                               const fileNameToDownload = cleanUrl.split('/').pop() || `surat_masuk_${i + 1}`;
@@ -248,8 +248,9 @@ export default function MonitoringSuratMasuk() {
 
                                   {/* ELEMEN TOMBOL DOWNLOAD BERKAS */}
                                   <a
-                                    href={finalUrl}
-                                    download={fileNameToDownload}
+                                    href={`${finalUrl}?download=`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     title={`Download Arsip ${i + 1}`}
                                     style={downloadBadgeStyle}
                                   >
