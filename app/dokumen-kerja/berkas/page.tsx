@@ -99,24 +99,16 @@ export default function ManajemenBerkasDokumenKerja() {
     setLoading(true);
 
     try {
-      // Mengonversi FileList menjadi Array dan memetakan setiap berkas ke dalam fetch individual
       const uploadPromises = Array.from(files).map(async (file) => {
         const formData = new FormData();
-        
-        // Membersihkan path absolut tiruan bawaan browser dari penamaan file
         const cleanName = file.name.split(/[\\/]/).pop() || file.name;
         
-        // Memasukkan hanya 1 pasangan file & path per request FormData
         formData.append("files", file);
         formData.append("paths", cleanName);
-
-        // Metadata untuk diolah backend secara terpisah
         formData.append("folderId", currentPath || "null");
         formData.append("noUrut", "0");
         formData.append("noBerkas", "-");
         formData.append("tanggalDokumen", new Date().toISOString());
-        
-        // Perbaikan Utama: Menggunakan nama asli berkas saat ini sebagai judul dokumen kerja
         formData.append("namaDokumen", cleanName); 
 
         const res = await fetch("/api/dokumen-kerja", {
@@ -139,9 +131,7 @@ export default function ManajemenBerkasDokumenKerja() {
         return file.name;
       });
 
-      // Menjalankan semua proses pengunggahan data secara paralel di background
       await Promise.all(uploadPromises);
-
       alert(`Berhasil mengunggah ${files.length} dokumen secara terpisah.`);
       loadData();
     } catch (err: any) {
@@ -149,7 +139,7 @@ export default function ManajemenBerkasDokumenKerja() {
       alert(`Terjadi kesalahan saat upload massal:\n${err.message || err}`);
     } finally {
       setLoading(false);
-      e.target.value = ""; // Membersihkan riwayat elemen input file
+      e.target.value = ""; 
     }
   };
 
@@ -295,7 +285,6 @@ export default function ManajemenBerkasDokumenKerja() {
 
   return (
     <div style={{ backgroundColor: '#f4f7fa', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
-      {/* HEADER TEMA MAROON & PUTIH */}
       <header style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem 2rem', background: 'white', borderBottom: '1px solid #e2e8f0' }}>
         <div>
           <h1 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#800000', margin: 0 }}>PENYIMPANAN DIGITAL DOKUMEN KERJA</h1>
@@ -404,11 +393,20 @@ export default function ManajemenBerkasDokumenKerja() {
                     {item.updatedAt}
                   </td>
                   <td style={{ ...tdStyle, borderRight: 'none' }}>
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', alignItems: 'center' }}>
                       {item.type === 'file' && (
                         <>
                           <Link href={`/dokumen-kerja/edit/${item.id}`} style={actionLinkBlue}>EDIT</Link>
-                          <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' }}>LIHAT</a>
+                          {(() => {
+                            const cleanUrl = item.fileUrl ? item.fileUrl.replace("/uploads/dokumen-kerja/", "").trim() : "";
+                            const finalUrl = item.fileUrl?.startsWith('http') 
+                              ? item.fileUrl.trim() 
+                              : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/dokumen-kerja/${cleanUrl}`;
+                            
+                            return (
+                              <a href={finalUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' }}>LIHAT</a>
+                            );
+                          })()}
                         </>
                       )}
                       <button 
@@ -448,7 +446,7 @@ export default function ManajemenBerkasDokumenKerja() {
   );
 }
 
-// STYLES (Clean Inline Styles Maroon & White Theme)
+// STYLES
 const thStyle: React.CSSProperties = { padding: '1rem', fontSize: '0.65rem', color: '#475569', fontWeight: 900, textTransform: 'uppercase', borderRight: '1px solid #e2e8f0', letterSpacing: '0.05em' };
 const tdStyle: React.CSSProperties = { padding: '0.75rem 1rem', textAlign: 'center', borderRight: '1px solid #e2e8f0', verticalAlign: 'middle' };
 const btnPrimaryStyle = { background: '#800000', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem' };
@@ -459,7 +457,6 @@ const searchFieldStyle = { width: '100%', padding: '10px 15px', borderRadius: '8
 const tableContainerStyle = { background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' };
 const statusTextStyle: React.CSSProperties = { textAlign: 'center', padding: '3rem', color: '#94a3b8' };
 const actionLinkBlue = { color: '#2563eb', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' };
-const actionLinkGreen = { color: '#059669', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' };
 const actionDeleteBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#ef4444', fontWeight: 800, cursor: 'pointer', fontSize: '0.7rem' };
 const actionMoveBtn: React.CSSProperties = { background: 'none', border: 'none', color: '#f59e0b', fontWeight: 800, cursor: 'pointer', fontSize: '0.7rem' };
 const moveBannerStyle: React.CSSProperties = { background: '#fffbeb', border: '1px solid #fde68a', padding: '1rem 1.5rem', borderRadius: '8px', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#92400e', fontSize: '0.85rem', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' };
