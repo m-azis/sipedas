@@ -227,15 +227,15 @@ export default function DokumentasiDokumenKerja() {
                             files.map((url, i) => {
                               const cleanUrl = url.trim();
                               // Menggunakan path uploads khusus dokumentasi agar rapi
-                              const finalUrl = cleanUrl.startsWith('/') ? cleanUrl : `/uploads/dokumentasi/${cleanUrl}`;
+                              const finalUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/dokumentasi/${cleanUrl}`;
                               const fileNameToDownload = cleanUrl.split('/').pop() || `dokumentasi_${i + 1}`;
                               
                               return (
                                 <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                  <a href={finalUrl} target="_blank" rel="noopener noreferrer" style={fileBadgeStyle}>
-                                    📄 LIHAT MEDIA {i + 1}
+                                  <a href={finalUrl} target="_blank" rel="noopener noreferrer" style={{ background: '#fff1f2', color: '#800000', padding: '6px 12px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textDecoration: 'none', border: '1px solid #fecaca', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                    📄 LIHAT BERKAS {i + 1}
                                   </a>
-                                  <a href={finalUrl} download={fileNameToDownload} title={`Download Berkas ${i + 1}`} style={downloadBadgeStyle}>
+                                  <a href={`${finalUrl}?download=`} target="_blank" rel="noopener noreferrer" title={`Download Berkas ${i + 1}`} style={{ background: '#f0fdf4', color: '#16a34a', padding: '6px 12px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 800, textDecoration: 'none', border: '1px solid #bbf7d0', display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
                                     📥 DOWNLOAD
                                   </a>
                                 </div>
