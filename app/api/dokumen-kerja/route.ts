@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { createClient } from "@supabase/supabase-js";
+
+// Inisialisasi client Supabase Server
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // GET: Mengambil data folder dan file berdasarkan parentId atau mode count
 export async function GET(req: Request) {
@@ -39,7 +42,7 @@ export async function GET(req: Request) {
   }
 }
 
-// POST: Membuat folder manual atau mengunggah dokumen kerja
+// POST: Membuat folder manual atau mengunggah dokumen kerja langsung ke cloud storage
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get("content-type") || "";
@@ -56,10 +59,9 @@ export async function POST(req: Request) {
       return NextResponse.json(newFolder);
     }
 
-    // 2. Upload File & Struktur Folder (Recursive Upload)
+    // 2. Upload File & Struktur Folder (Recursive Upload ke Supabase)
     const formData = await req.formData();
 
-    // Mengambil nilai input teks asli dari kiriman komponen Form
     const namaDokumen = (formData.get("namaDokumen") as string) || "-";
     const tempat = (formData.get("tempat") as string) || "-";
     
@@ -75,27 +77,21 @@ export async function POST(req: Request) {
     // Memfilter file untuk memastikan ada file valid yang diunggah
     const validFiles = files.filter(file => file && file.size > 0);
 
-    // KONDISI JASA: USER TIDAK MENGUNGGAH BERKAS (HANYA INPUT DATA TEXT FORM)
+    // KONDISI 1: JIKA DATA TEXT SAJA (TANPA BERKAS)
     if (validFiles.length === 0) {
       await prisma.dokumenKerja.create({
         data: {
           namaDokumen,
           tanggal,
           tempat,
-          fileUrl: null, // Berkas kosong
+          fileUrl: null,
           folderId: currentFolderId,
         }
       });
       return NextResponse.json({ success: true, message: "Data dokumen kerja tanpa file berhasil disimpan" });
     }
 
-    // KONDISI JIKA USER MENGUNGGAH BERKAS FILE / FOLDER
-    // Folder penyimpanan fisik
-    const uploadDir = join(process.cwd(), "public", "uploads", "dokumen-kerja");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
+    // KONDISI 2: JIKA MENGUNGGAH BERKAS FILE ATAU RECURSIVE FOLDER
     let uploadedFileUrls: string[] = [];
     let targetFolderId = currentFolderId;
 
@@ -104,7 +100,7 @@ export async function POST(req: Request) {
       const relativePath = paths[i];
       if (!file || file.size === 0) continue;
 
-      // Logika pembuatan folder otomatis jika upload folder (Webkit Directory / Drag & Drop)
+      // Logika penanganan folder rekursif di database (Webkit Directory / Drag & Drop)
       if (relativePath && relativePath.includes("/")) {
         const folderStructure = relativePath.split("/").slice(0, -1);
         let lastParentId = currentFolderId;
@@ -124,23 +120,33 @@ export async function POST(req: Request) {
         targetFolderId = lastParentId;
       }
 
-      // Simpan file ke sistem
+      // Convert file ke Buffer untuk Supabase upload
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
       
       const rawName = file.name.split(/[\\/]/).pop() || file.name;
       const safeFileName = `${Date.now()}-${rawName.replace(/[^a-z0-9.]/gi, '_')}`;
       
-      await writeFile(join(uploadDir, safeFileName), buffer);
+      // Upload langsung ke Bucket cloud 'dokumen-kerja'
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("dokumen-kerja")
+        .upload(safeFileName, buffer, {
+          contentType: file.type,
+          upsert: true,
+        });
 
-      // Kumpulkan URL file ke dalam array penampung
-      uploadedFileUrls.push(`/uploads/dokumen-kerja/${safeFileName}`);
+      if (uploadError) {
+        throw new Error(`Supabase Upload Error: ${uploadError.message}`);
+      }
+
+      // Kumpulkan nama file unik ke penampung array
+      uploadedFileUrls.push(safeFileName);
     }
 
-    // Gabungkan array URL menjadi string tunggal dipisahkan koma untuk mendukung multi-file di UI
+    // Gabungkan array nama file menjadi string tunggal dipisahkan koma
     const finalFileUrlString = uploadedFileUrls.join(",");
 
-    // Simpan satu data record tunggal yang mewakili seluruh berkas yang diunggah
+    // Simpan data record tunggal ke database Prisma
     await prisma.dokumenKerja.create({
       data: {
         namaDokumen, 
@@ -151,7 +157,7 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, message: "Arsip dokumen kerja berhasil disimpan" });
+    return NextResponse.json({ success: true, message: "Arsip dokumen kerja berhasil disimpan ke cloud" });
   } catch (error: any) {
     console.error("Upload Dokumen Kerja Error:", error);
     return NextResponse.json({ error: "Gagal simpan data", details: error.message }, { status: 500 });
