@@ -376,8 +376,8 @@ export default function ManajemenBerkasDokumentasi() {
                       {item.type === 'file' && (
                         <>
                           <Link href={`/dokumentasi/edit/${item.id}`} style={actionLinkBlue}>EDIT</Link>
-                          <a href={item.fileUrl?.startsWith('http') ? item.fileUrl : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/dokumentasi/${item.fileUrl}`} target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' }}>LIHAT</a>
-                          <a href={item.fileUrl?.startsWith('http') ? `${item.fileUrl}?download=` : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/dokumentasi/${item.fileUrl}?download=`} target="_blank" rel="noopener noreferrer" title="Download Berkas" style={{ color: '#800000', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' }}>DOWNLOAD</a>
+                          <a href={item.fileUrl?.startsWith('http') ? item.fileUrl.trim() : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/dokumentasi/${item.fileUrl?.trim()}`} target="_blank" rel="noopener noreferrer" style={{ color: '#059669', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' }}>LIHAT</a>
+                          <a href={item.fileUrl?.startsWith('http') ? `${item.fileUrl.trim()}?download=` : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/dokumentasi/${item.fileUrl?.trim()}?download=`} target="_blank" rel="noopener noreferrer" title="Download Berkas" style={{ color: '#800000', fontWeight: 800, textDecoration: 'none', fontSize: '0.7rem' }}>DOWNLOAD</a>
                         </>
                       )}
                       <button 
