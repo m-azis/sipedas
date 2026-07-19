@@ -213,8 +213,8 @@ export default function MonitoringDokumenKerja() {
                           ) : files.length > 0 ? (
                             files.map((url: string, i: number) => {
                               const cleanUrl = url.trim();
-                              // Jika di DB hanya tersimpan nama file, otomatis arahkan ke static folder public
-                              const finalUrl = cleanUrl.startsWith('http') ? cleanUrl : `/uploads/dokumen-kerja/${cleanUrl}`;
+                              // Mengalihkan secara penuh dari public local /uploads/ ke cloud Supabase Storage
+                              const finalUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://vbgygthhazkecogdleyd.supabase.co/storage/v1/object/public/dokumen-kerja/${cleanUrl}`;
                               
                               // Mengambil potongan nama file asli sebagai nama file hasil download
                               const fileNameToDownload = cleanUrl.split('/').pop() || `berkas_${i + 1}`;
