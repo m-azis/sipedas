@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { supabase } from "@/lib/supabase"; // Import Supabase Client
 
 // GET: Mengambil data folder dan file berdasarkan parentId atau mode count
 export async function GET(req: Request) {
@@ -102,12 +100,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: "Arsip data teks berhasil disimpan" });
     }
 
-    // KONDISI B: User melampirkan berkas (Proses upload fisik berjalan)
-    const uploadDir = join(process.cwd(), "public", "uploads", "surat-keluar");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
+    // KONDISI B: User melampirkan berkas (Proses upload ke Supabase berjalan)
     let uploadedFileUrls: string[] = [];
     let targetFolderId = currentFolderId;
 
@@ -136,17 +129,33 @@ export async function POST(req: Request) {
         targetFolderId = lastParentId;
       }
 
-      // Tulis file fisik ke penyimpanan server
+      // --- MULAI UPLOAD KE SUPABASE ---
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
       
       const rawName = file.name.split(/[\\/]/).pop() || file.name;
       const safeFileName = `${Date.now()}-${rawName.replace(/[^a-z0-9.]/gi, '_')}`;
       
-      await writeFile(join(uploadDir, safeFileName), buffer);
+      // Pastikan bucket 'surat-keluar' sudah ada di Supabase!
+      const { data, error } = await supabase.storage
+        .from('surat-keluar')
+        .upload(safeFileName, buffer, {
+          contentType: file.type,
+        });
+
+      if (error) {
+        console.error("Error upload Surat Keluar ke Supabase:", error);
+        throw error;
+      }
       
+      // Dapatkan URL Publik
+      const { data: urlData } = supabase.storage
+        .from('surat-keluar')
+        .getPublicUrl(safeFileName);
+
       // Simpan path URL ke array penampung
-      uploadedFileUrls.push(`/uploads/surat-keluar/${safeFileName}`);
+      uploadedFileUrls.push(urlData.publicUrl);
+      // --- SELESAI UPLOAD KE SUPABASE ---
     }
 
     // Menggabungkan seluruh URL file menjadi satu string yang dipisahkan koma
@@ -169,7 +178,7 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, message: "Arsip berkas berhasil disimpan" });
+    return NextResponse.json({ success: true, message: "Arsip berkas berhasil disimpan ke Cloud" });
   } catch (error: any) {
     console.error("Upload Surat Keluar Error:", error);
     return NextResponse.json(

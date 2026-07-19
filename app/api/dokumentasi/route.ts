@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { supabase } from "@/lib/supabase"; // Import Supabase Client
 
 // GET: Mengambil data folder dan file dokumentasi berdasarkan parentId atau mode count
 export async function GET(req: Request) {
@@ -56,7 +54,7 @@ export async function POST(req: Request) {
       return NextResponse.json(newFolder);
     }
 
-    // 2. Upload File & Struktur Folder (Recursive Upload)
+    // 2. Upload File & Struktur Folder (Recursive Upload) ke Supabase
     const formData = await req.formData();
 
     // Ambil data kiriman teks asli dari Form input komponen TambahDokumentasi
@@ -90,12 +88,6 @@ export async function POST(req: Request) {
     }
 
     // KONDISI JIKA USER MELAMPIRKAN FILE BERKAS/FOLDER
-    // Folder penyimpanan fisik khusus dokumentasi
-    const uploadDir = join(process.cwd(), "public", "uploads", "dokumentasi");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
     let uploadedFileUrls: string[] = [];
     let targetFolderId = currentFolderId;
 
@@ -124,21 +116,35 @@ export async function POST(req: Request) {
         targetFolderId = lastParentId;
       }
 
-      // Simpan file ke sistem penyimpanan
+      // --- MULAI UPLOAD KE SUPABASE ---
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
       
       const rawName = file.name.split(/[\\/]/).pop() || file.name;
       const safeFileName = `${Date.now()}-${rawName.replace(/[^a-z0-9.]/gi, '_')}`;
       
-      await writeFile(join(uploadDir, safeFileName), buffer);
+      const { data, error } = await supabase.storage
+        .from('dokumentasi') // Pastikan bucket 'dokumentasi' sudah dibuat di Supabase
+        .upload(safeFileName, buffer, {
+          contentType: file.type,
+        });
+
+      if (error) {
+        console.error("Error upload dokumentasi ke Supabase:", error);
+        throw error;
+      }
+
+      // Ambil URL Publik
+      const { data: urlData } = supabase.storage
+        .from('dokumentasi')
+        .getPublicUrl(safeFileName);
 
       // Kumpulkan URL file ke dalam array penampung
-      uploadedFileUrls.push(`/uploads/dokumentasi/${safeFileName}`);
+      uploadedFileUrls.push(urlData.publicUrl);
+      // --- SELESAI UPLOAD KE SUPABASE ---
     }
 
     // Menggabungkan seluruh URL menjadi satu string yang dipisahkan koma
-    // Menghindari duplikasi baris tabel data form teks utama di sistem database
     const finalFileUrlString = uploadedFileUrls.join(",");
 
     // Simpan data rekaman berkas tunggal yang berisi semua string URL lampiran
@@ -152,7 +158,7 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, message: "Arsip dokumentasi berhasil disimpan" });
+    return NextResponse.json({ success: true, message: "Arsip dokumentasi berhasil disimpan ke Cloud" });
   } catch (error: any) {
     console.error("Upload Dokumentasi Error:", error);
     return NextResponse.json({ error: "Gagal simpan data dokumentasi", details: error.message }, { status: 500 });

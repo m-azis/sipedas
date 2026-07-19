@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { supabase } from "@/lib/supabase"; // Import Supabase Client
 
 // GET: Mengambil data folder dan file berdasarkan parentId
 export async function GET(req: Request) {
@@ -83,8 +81,8 @@ export async function POST(req: Request) {
           tanggalSurat,
           nomorSurat,
           perihal,
-          noPetunjuk, // Tambahkan field opsional jika ada di schema database Anda
-          noPaket,    // Tambahkan field opsional jika ada di schema database Anda
+          noPetunjuk, 
+          noPaket,    
           fileUrl: null, // Berkas kosong
           folderId: currentFolderId,
         }
@@ -92,12 +90,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: "Data surat masuk tanpa file berhasil disimpan" });
     }
 
-    // KONDISI JIKA USER MELAMPIRKAN FILE BERKAS/FOLDER
-    const uploadDir = join(process.cwd(), "public", "uploads", "surat-masuk");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
+    // KONDISI JIKA USER MELAMPIRKAN FILE BERKAS/FOLDER (Upload ke Supabase)
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const relativePath = paths[i];
@@ -124,14 +117,29 @@ export async function POST(req: Request) {
         targetFolderId = lastParentId;
       }
 
-      // Simpan File Fisik
+      // --- MULAI UPLOAD FILE FISIK KE SUPABASE ---
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
       
       const rawName = file.name.split(/[\\/]/).pop() || file.name;
       const safeFileName = `${Date.now()}-${rawName.replace(/[^a-z0-9.]/gi, '_')}`;
       
-      await writeFile(join(uploadDir, safeFileName), buffer);
+      const { data, error } = await supabase.storage
+        .from('surat-masuk') // Pastikan bucket 'surat-masuk' sudah ada di Supabase
+        .upload(safeFileName, buffer, {
+          contentType: file.type,
+        });
+
+      if (error) {
+        console.error("Error upload Surat Masuk ke Supabase:", error);
+        throw error;
+      }
+
+      // Dapatkan URL Publik
+      const { data: urlData } = supabase.storage
+        .from('surat-masuk')
+        .getPublicUrl(safeFileName);
+      // --- SELESAI UPLOAD ---
 
       // Simpan ke Database dengan data yang didapatkan dari form input asli
       await prisma.suratMasuk.create({
@@ -144,13 +152,13 @@ export async function POST(req: Request) {
           perihal: files.length > 1 ? rawName : perihal, // Jika banyak berkas gunakan nama berkas, jika tunggal gunakan teks form perihal
           noPetunjuk,
           noPaket,
-          fileUrl: `/uploads/surat-masuk/${safeFileName}`,
+          fileUrl: urlData.publicUrl, // Gunakan URL dari Supabase
           folderId: targetFolderId,
         }
       });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "Berhasil menyimpan ke Cloud Database" });
   } catch (error: any) {
     console.error("Upload Error:", error);
     return NextResponse.json({ error: "Gagal simpan", details: error.message }, { status: 500 });
