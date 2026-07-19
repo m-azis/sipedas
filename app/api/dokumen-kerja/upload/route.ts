@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@supabase/supabase-js";
 
-// Inisialisasi client Supabase Server
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
+  return createClient(supabaseUrl, supabaseKey);
+};
 
 export async function POST(request: Request) {
   try {
@@ -21,18 +22,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tidak ada file yang dipilih" }, { status: 400 });
     }
 
-    // Array untuk menampung nama file yang sukses diupload ke Supabase
+    const supabase = getSupabaseClient();
     const allFileUrls: string[] = [];
 
-    // 1. Loop untuk upload langsung ke Supabase Storage
     for (const file of files) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-
-      // Membuat nama file unik agar tidak bentrok di bucket
       const uniqueFileName = `${Date.now()}-${file.name.replace(/\s+/g, "_")}`;
 
-      // Upload langsung ke bucket 'dokumen-kerja'
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("dokumen-kerja")
         .upload(uniqueFileName, buffer, {
@@ -44,11 +41,9 @@ export async function POST(request: Request) {
         throw new Error(`Supabase upload error: ${uploadError.message}`);
       }
 
-      // Masukkan nama file unik ke array (supaya terbaca oleh logic string split halaman monitoring)
       allFileUrls.push(uniqueFileName);
     }
 
-    // 2. Simpan rekam jejak ke Database Prisma
     const finalEntry = await prisma.dokumenKerja.create({
       data: {
         namaDokumen: customNamaDokumen,
