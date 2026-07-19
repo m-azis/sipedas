@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: Request) {
   try {
@@ -17,22 +16,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tidak ada file yang dipilih" }, { status: 400 });
     }
 
-    // Menggunakan trik folder lokal seperti di Dokumentasi agar aman dari error build time
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "dokumen-kerja");
-    await mkdir(uploadDir, { recursive: true });
+    // Menggunakan string mentah dinamis agar Vercel tidak mendeteksi inisialisasi saat build time
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Koneksi cloud storage Supabase belum dikonfigurasi.");
+    }
 
+    const supabase = createClient(supabaseUrl, supabaseKey);
     const allFileUrls: string[] = [];
 
     for (const file of files) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-
       const uniqueFileName = `${Date.now()}-${file.name.replace(/\s+/g, "_")}`;
-      const filePath = path.join(uploadDir, uniqueFileName);
-      
-      await writeFile(filePath, buffer);
-      
-      // Simpan nama filenya saja ke database agar sinkron dengan mapping URL cloud
+
+      // Upload langsung ke cloud bucket 'dokumen-kerja' (Bypass lokal disk)
+      const { error: uploadError } = await supabase.storage
+        .from("dokumen-kerja")
+        .upload(uniqueFileName, buffer, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw new Error(`Gagal upload ke Cloud: ${uploadError.message}`);
+      }
+
       allFileUrls.push(uniqueFileName);
     }
 
@@ -48,12 +59,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `${files.length} file berhasil diproses`,
+      message: `${files.length} file berhasil diunggah langsung ke cloud storage`,
       data: finalEntry 
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("[UPLOAD_DOKUMEN_KERJA_ERROR]:", error);
-    return NextResponse.json({ error: "Gagal memproses unggahan dokumen kerja" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Gagal memproses unggahan dokumen kerja" }, { status: 500 });
   }
 }

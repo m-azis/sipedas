@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { createClient } from "@supabase/supabase-js";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -78,11 +76,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: "Data dokumen kerja tanpa file berhasil disimpan" });
     }
 
-    const uploadDir = join(process.cwd(), "public", "uploads", "dokumen-kerja");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Koneksi cloud storage Supabase belum dikonfigurasi.");
     }
 
+    const supabase = createClient(supabaseUrl, supabaseKey);
     let uploadedFileUrls: string[] = [];
     let targetFolderId = currentFolderId;
 
@@ -116,7 +117,16 @@ export async function POST(req: Request) {
       const rawName = file.name.split(/[\\/]/).pop() || file.name;
       const safeFileName = `${Date.now()}-${rawName.replace(/[^a-z0-9.]/gi, '_')}`;
       
-      await writeFile(join(uploadDir, safeFileName), buffer);
+      const { error: uploadError } = await supabase.storage
+        .from("dokumen-kerja")
+        .upload(safeFileName, buffer, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw new Error(`Gagal upload ke Cloud: ${uploadError.message}`);
+      }
       uploadedFileUrls.push(safeFileName);
     }
 
